@@ -1,0 +1,27 @@
+# Binaries for the current project
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.prof
+
+# Go workspace build products
+/bin/
+/pkg/
+
+# Go module cache
+/vendor/
+
+# Editor/IDE specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Test results
+testdata/
