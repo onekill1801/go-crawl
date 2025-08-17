@@ -46,7 +46,7 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-
+		// count := 0
 		var items []InnerData
 		for _, msg := range res {
 			// Lấy field "data" (string JSON)
@@ -59,13 +59,31 @@ func main() {
 				continue
 			}
 			items = append(items, parsed)
+			// count++
+			// if count >= 10 {
+			// 	break
+			// }
 		}
+
+		items = append(items, InnerData{
+			Referer:  "https://ac.qq.com/",
+			ImageURL: "https://manhua.acimg.cn/manhua_detail/0/27_15_39_67ec41e530fbf382fef34251ee200709_1735285149604.jpg/0",
+			Title:    "Thêm tay",
+			Order:    999,
+		})
 
 		c.JSON(http.StatusOK, items)
 	})
 
 	// Endpoint GET với param
 	r.GET("/user/:name", func(c *gin.Context) {
+		name := c.Param("name")
+		c.JSON(http.StatusOK, gin.H{
+			"user": name,
+		})
+	})
+
+	r.GET("/novel/list", func(c *gin.Context) {
 		name := c.Param("name")
 		c.JSON(http.StatusOK, gin.H{
 			"user": name,
