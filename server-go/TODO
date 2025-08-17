@@ -1,0 +1,28 @@
+# TODO Application Novel
+
+1. **Quản lý danh sách truyện**
+    - [ ] Thêm truyện mới vào danh sách.
+    - [ ] Xóa truyện khỏi danh sách.
+    - [ ] Cập nhật thông tin truyện (tên, tác giả, thể loại, trạng thái, ...).
+    - [ ] Tìm kiếm và lọc truyện theo tiêu chí (tên, thể loại, trạng thái, ...).
+
+2. **Quản lý chapter**
+    - [ ] Thêm chapter mới cho truyện.
+    - [ ] Xóa chapter khỏi truyện.
+    - [ ] Cập nhật thông tin chapter (tên chapter, số thứ tự, ...).
+    - [ ] Danh sách chapter theo thứ tự.
+
+3. **Quản lý nội dung chapter**
+    - [ ] Thêm nội dung cho chapter.
+    - [ ] Cập nhật nội dung chapter.
+    - [ ] Xóa nội dung chapter.
+
+4. **Thông báo (Notify) về app**
+    - [ ] Gửi thông báo khi có chapter mới.
+    - [ ] Gửi thông báo khi có truyện mới.
+    - [ ] Cấu hình tần suất và loại thông báo.
+
+5. **Cập nhật chapter mới**
+    - [ ] Tự động kiểm tra và cập nhật chapter mới từ nguồn.
+    - [ ] Hiển thị danh sách chapter mới cập nhật.
+    - [ ] Gửi thông báo đến người dùng về chapter mới.
