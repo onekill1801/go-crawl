@@ -8,4 +8,5 @@ func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
 	g.GET("", h.List)
 	g.GET("/:id", h.Get)
 	g.GET("/:id/next", h.Get)
+	g.GET("/:id/previous", h.Get)
 }

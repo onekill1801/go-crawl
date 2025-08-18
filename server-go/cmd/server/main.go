@@ -3,6 +3,7 @@ package main
 import "server/internal/app"
 
 func main() {
-	r := app.Setup()
-	r.Run(":8080")
+	r, repo := app.Setup()
+	defer repo.Close() // ✅ Close khi app dừng
+	r.Run(":8088")
 }

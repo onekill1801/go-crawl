@@ -1,6 +1,7 @@
 package app
 
 import (
+	"log"
 	"server/internal/api/story"
 	"server/internal/middleware"
 	"server/internal/repository"
@@ -9,23 +10,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Setup() *gin.Engine {
+// app/Setup.go
+func Setup() (*gin.Engine, *repository.MySQLStoryRepo) {
 	r := gin.Default()
 	r.Use(middleware.ErrorHandler())
 
-	// Repo
-	storyRepo := repository.NewInMemoryStoryRepo()
+	storyRepo, err := repository.NewMySQLStoryRepo()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// Service
 	storySvc := service.NewStoryService(storyRepo)
-
-	// Handler
 	storyH := story.NewHandler(storySvc)
 
-	// Routes
 	api := r.Group("/api")
 	v1 := api.Group("/v1")
 	story.RegisterRoutes(v1, storyH)
 
-	return r
+	return r, storyRepo
 }

@@ -42,7 +42,7 @@ func (h *Handler) Get(c *gin.Context) {
 }
 
 func (h *Handler) List(c *gin.Context) {
-	list, err := h.svc.List(c.Request.Context(), 0, 50)
+	list, err := h.svc.List(c.Request.Context(), 0, 2)
 	if err != nil {
 		c.Error(err)
 		return
