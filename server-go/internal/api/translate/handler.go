@@ -3,7 +3,6 @@ package story
 import (
 	"net/http"
 	"server/internal/service"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -43,22 +42,7 @@ func (h *Handler) Get(c *gin.Context) {
 }
 
 func (h *Handler) List(c *gin.Context) {
-	offsetStr := c.DefaultQuery("offset", "0")
-	limitStr := c.DefaultQuery("limit", "10")
-
-	// Convert string -> int
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid offset"})
-		return
-	}
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
-		return
-	}
-
-	list, err := h.svc.List(c.Request.Context(), offset, limit)
+	list, err := h.svc.List(c.Request.Context(), 0, 50)
 	if err != nil {
 		c.Error(err)
 		return
