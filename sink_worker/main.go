@@ -36,8 +36,8 @@ func main() {
 	}{
 		// {"events", "worker-group", "worker-1", processor.HandleMessage},
 		{"series_queue", "worker-group", "worker-2", processor.HandleMessageStories},
-		// {"chapter_queue", "worker-group", "worker-3", processor.HandleMessageChapter},
-		// {"images_queue", "worker-group1", "worker-4", processor.HandleMessageImages},
+		{"chapter_queue", "worker-group", "worker-3", processor.HandleMessageChapter},
+		{"images_queue", "worker-group1", "worker-4", processor.HandleMessageImages},
 	}
 
 	var wg sync.WaitGroup
