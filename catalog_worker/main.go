@@ -3,6 +3,7 @@ package main
 import (
 	"catalog/queue"
 	"context"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -22,36 +23,36 @@ func main() {
 		Consumer string
 		Handler  func(ctx context.Context, q *queue.RedisQueue, msg redis.XMessage)
 	}{
-		{"stories_queue", "worker-group", "worker-2", storyRunning},
-		{"chapters_queue", "worker-group", "worker-2", chapterRunning},
-		{"images_queue", "worker-group", "worker-2", imageRunning},
+		{"domain_queue", "worker-group", "worker-1", storyRunning},
+		{"series_queue", "worker-group", "worker-2", chapterRunning},
+		{"chapter_queue", "worker-group", "worker-3", imageRunning},
 	}
+
 	for _, s := range streams {
+		if err := q.EnsureConsumerGroup(s.Name, s.Group, true); err != nil {
+			log.Fatalf("cannot create group for stream %s: %v", s.Name, err)
+		} else {
+			fmt.Printf("Consumer group ensured for stream %s and group %s\n", s.Name, s.Group)
+		}
 		wg.Add(1)
-		go func(streamName string, handler func(ctx context.Context, q *queue.RedisQueue, msg redis.XMessage)) {
+		go func(streamName, group, consumer string, handler func(ctx context.Context, q *queue.RedisQueue, msg redis.XMessage)) {
 			defer wg.Done()
 			for {
-				select {
-				case <-ctx.Done():
-					log.Printf("[%s] stopping goroutine\n", streamName)
-					return
-				default:
-					msgs, err := queue.ReadStream(ctx, s.Name, s.Group, s.Consumer)
-					if err != nil {
-						log.Println("read error:", err)
-						time.Sleep(time.Second) // retry
-						continue
-					}
-
-					for _, msg := range msgs {
-						s.Handler(ctx, q, msg) // gọi trực tiếp
-					}
+				msgs, err := q.ReadStream(ctx, streamName, group, consumer)
+				if err != nil {
+					log.Println("read error:", err)
+					time.Sleep(time.Second)
+					continue
+				} else {
+					fmt.Printf("Read %d messages from %s\n", len(msgs), streamName)
+				}
+				for _, msg := range msgs {
+					handler(ctx, q, msg)
 				}
 			}
-		}(s.Name, s.Handler)
+		}(s.Name, s.Group, s.Consumer, s.Handler)
 	}
 
-	// Chờ tất cả goroutine kết thúc khi cancel được gọi
 	wg.Wait()
 	log.Println("All streams stopped gracefully")
 }

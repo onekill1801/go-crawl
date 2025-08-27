@@ -3,6 +3,8 @@ package queue
 import (
 	"context"
 	"encoding/json"
+	"strings"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -18,12 +20,32 @@ func NewRedisQueue(addr string) *RedisQueue {
 	return &RedisQueue{client: rdb}
 }
 
+func (q *RedisQueue) EnsureConsumerGroup(stream, group string, reset bool) error {
+	ctx := context.Background()
+
+	if reset {
+		_ = q.client.XGroupDestroy(ctx, stream, group).Err()
+	}
+
+	// Tạo lại group
+	startID := "$" // chỉ đọc message mới
+	if reset {
+		startID = "0" // đọc lại toàn bộ từ đầu
+	}
+
+	err := q.client.XGroupCreateMkStream(ctx, stream, group, startID).Err()
+	if err != nil && !strings.Contains(err.Error(), "BUSYGROUP") {
+		return err
+	}
+	return nil
+}
+
 func (q *RedisQueue) ReadStream(ctx context.Context, stream, group, consumer string) ([]redis.XMessage, error) {
 	res, err := q.client.XReadGroup(ctx, &redis.XReadGroupArgs{
 		Group:    group,
 		Consumer: consumer,
 		Streams:  []string{stream, ">"},
-		Count:    10,
+		Count:    1,
 		Block:    0, // block cho đến khi có message
 	}).Result()
 
@@ -31,7 +53,8 @@ func (q *RedisQueue) ReadStream(ctx context.Context, stream, group, consumer str
 		return nil, err
 	}
 
-	if len(res) > 0 {
+	if len(res) > 0 && len(res[0].Messages) > 0 {
+		time.Sleep(1 * time.Second)
 		return res[0].Messages, nil
 	}
 	return nil, nil

@@ -5,56 +5,55 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sync"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
 func storyRunning(ctx context.Context, q *queue.RedisQueue, msg redis.XMessage) {
-	var job DomainJob
-	job.Domain = "www.webtoons.com/en/"
-	if err := ProcessDomainJob(job, q); err != nil {
-		log.Println("DomainJob error:", err)
+	if storyURL, ok := msg.Values["domain_url"].(string); ok {
+		var job DomainJob
+		job.Domain = storyURL
+		if err := ProcessDomainJob(job, q); err != nil {
+			log.Println("DomainJob error:", err)
+		}
 	}
+
 }
 
 func chapterRunning(ctx context.Context, q *queue.RedisQueue, msg redis.XMessage) {
-	const totalPages = 56
-	const batchSize = 2
+	series := msg.Values["series_url"].(string)
 
-	var wg sync.WaitGroup
+	page := 1
+	for {
+		var seriesJob SeriesJob
+		seriesJob.SeriesURL = fmt.Sprintf("%s&page=%d", series, page)
 
-	for i := 1; i <= totalPages; i += batchSize {
-		// Xử lý batch 4 trang một lúc
-		for j := 0; j < batchSize && (i+j) <= totalPages; j++ {
-			wg.Add(1)
-			go func(page int) {
-				defer wg.Done()
+		fmt.Println("seriesJob.SeriesURL:", seriesJob.SeriesURL)
 
-				var seriesJob SeriesJob
-				seriesJob.SeriesURL = fmt.Sprintf("https://www.webtoons.com/en/drama/lookism/list?title_no=1049&page=%d", page)
-
-				fmt.Println("seriesJob.SeriesURL:", seriesJob.SeriesURL)
-				// seriesJob.SeriesURL = "https://www.webtoons.com/en/drama/lookism/list?title_no=1049&page=3"
-				err := ProcessSeriesJob(seriesJob, q)
-				if err != nil {
-					log.Println("DomainJob error on page", page, ":", err)
-				}
-			}(i + j)
+		maxPage, err := ProcessSeriesJob(seriesJob, q)
+		if err != nil {
+			log.Println("DomainJob error on page", page, ":", err)
+			break
 		}
 
-		// Chờ 4 request chạy xong
-		wg.Wait()
+		// nếu maxPage >= page thì dừng luôn
+		if maxPage >= page {
+			fmt.Println("Max page found:", maxPage, " -> stop processing")
+			break
+		}
 
-		// Nghỉ 300ms trước khi xử lý batch tiếp theo
-		time.Sleep(2000 * time.Millisecond)
+		page++
+
+		// nghỉ 2s trước khi request tiếp
+		time.Sleep(1 * time.Second)
 	}
 }
 
 func imageRunning(ctx context.Context, q *queue.RedisQueue, msg redis.XMessage) {
+	chapterUrl := msg.Values["chapter_url"].(string)
 	var seriesJob SeriesJob
-	seriesJob.SeriesURL = "https://www.webtoons.com/en/drama/lookism/ep-554-cheonmyeong-3/viewer?title_no=1049&episode_no=554"
+	seriesJob.SeriesURL = chapterUrl
 	if err := ProcessImagesJob(seriesJob, q); err != nil {
 		log.Println("DomainJob error on page", ":", err)
 	}

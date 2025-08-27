@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -98,7 +99,7 @@ func (p *TruyenDepParser) GetSeriesList(doc *html.Node) ([]Series, error) {
 	return results, nil
 }
 
-func (p *TruyenDepParser) GetChapters(doc *html.Node) ([]Chapter, error) {
+func (p *TruyenDepParser) GetChapters(doc *html.Node) ([]Chapter, int, error) {
 
 	maxPage := extractMaxPage(doc)
 	fmt.Println("Total pages:", maxPage)
@@ -123,7 +124,7 @@ func (p *TruyenDepParser) GetChapters(doc *html.Node) ([]Chapter, error) {
 
 	f(doc)
 
-	return results, nil
+	return results, maxPage, nil
 }
 
 func findUl(n *html.Node, links *[]Chapter) {
@@ -235,18 +236,51 @@ func extractMaxPage(doc *html.Node) int {
 }
 
 func extractPageNumbers(paginateDiv *html.Node, maxPage *int) {
+	re := regexp.MustCompile(`page=(\d+)`)
+	var lastHref string
+	hasNext := false
+
 	for c := paginateDiv.FirstChild; c != nil; c = c.NextSibling {
 		if c.Type == html.ElementNode && c.Data == "a" {
+			var href string
+			var class string
+
 			for _, attr := range c.Attr {
 				if attr.Key == "href" {
-					page := *maxPage + 1
-					if page > *maxPage {
-						*maxPage = page
-					}
+					href = attr.Val
 				}
+				if attr.Key == "class" {
+					class = attr.Val
+				}
+			}
+
+			if class == "pg_next" {
+				hasNext = true
+				break
+			}
+
+			if href != "" && href != "#" {
+				lastHref = href
 			}
 		}
 	}
+
+	if hasNext {
+		*maxPage = 0
+		return
+	}
+
+	if lastHref != "" {
+		if matches := re.FindStringSubmatch(lastHref); len(matches) == 2 {
+			if page, err := strconv.Atoi(matches[1]); err == nil {
+				*maxPage = page
+				return
+			}
+		}
+	}
+
+	// nếu chỉ có 1 page hoặc href = '#' thì mặc định là 1
+	*maxPage = 1
 }
 
 func extractPageNumberFromHref(href string) int {

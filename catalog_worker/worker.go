@@ -129,11 +129,11 @@ func extractTitleNo(url string) (int64, error) {
 
 var index = 1
 
-func ProcessSeriesJob(job SeriesJob, q *queue.RedisQueue) error {
+func ProcessSeriesJob(job SeriesJob, q *queue.RedisQueue) (int, error) {
 	domain := "www.webtoons.com/en/"
 	parser := parser.GetParserForDomain(domain)
 	if parser == nil {
-		return fmt.Errorf("no parser for domain: %s", domain)
+		return -1, fmt.Errorf("no parser for domain: %s", domain)
 	}
 
 	doc, err := fetchHTML(job.SeriesURL)
@@ -145,11 +145,11 @@ func ProcessSeriesJob(job SeriesJob, q *queue.RedisQueue) error {
 	// }
 
 	if err != nil {
-		return err
+		return -1, err
 	}
-	chapters, err := parser.GetChapters(doc)
+	chapters, maxPage, err := parser.GetChapters(doc)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	for _, chap := range chapters {
@@ -162,7 +162,7 @@ func ProcessSeriesJob(job SeriesJob, q *queue.RedisQueue) error {
 		})
 	}
 
-	return nil
+	return maxPage, nil
 }
 
 func extractChapterNumber(title string) (int32, error) {

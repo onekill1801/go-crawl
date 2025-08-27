@@ -32,6 +32,6 @@ type ImagesChapter struct {
 type Parser interface {
 	DomainMatch(domain string) bool
 	GetSeriesList(doc *html.Node) ([]Series, error)
-	GetChapters(doc *html.Node) ([]Chapter, error)
+	GetChapters(doc *html.Node) ([]Chapter, int, error)
 	GetListImages(doc *html.Node) ([]ImagesChapter, error)
 }
