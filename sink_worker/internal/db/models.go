@@ -7,11 +7,42 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+	"time"
 )
+
+type Chapter struct {
+	ID        int64
+	StoryID   string
+	Title     string
+	Content   sql.NullString
+	CreatedAt time.Time
+	OrderStt  sql.NullInt32
+	ImageUrl  sql.NullString
+}
 
 type Event struct {
 	ID        int64
 	StreamID  string
 	Payload   json.RawMessage
 	CreatedAt sql.NullTime
+}
+
+type Image struct {
+	ID        int64
+	ChapterID int64
+	Url       string
+	CreatedAt time.Time
+	Referer   sql.NullString
+	Title     sql.NullString
+	OrderStt  sql.NullInt32
+}
+
+type Story struct {
+	ID         string
+	Title      string
+	Author     string
+	CoverUrl   sql.NullString
+	CreatedAt  time.Time
+	DomainLink sql.NullString
+	ImageUrl   sql.NullString
 }

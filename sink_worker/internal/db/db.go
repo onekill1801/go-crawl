@@ -7,7 +7,6 @@ package db
 import (
 	"context"
 	"database/sql"
-    _ "github.com/go-sql-driver/mysql"
 )
 
 type DBTX interface {
@@ -15,10 +14,6 @@ type DBTX interface {
 	PrepareContext(context.Context, string) (*sql.Stmt, error)
 	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
 	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
-}
-
-func NewDB(dsn string) (*sql.DB, error) {
-    return sql.Open("mysql", dsn)
 }
 
 func New(db DBTX) *Queries {
@@ -34,4 +29,3 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		db: tx,
 	}
 }
-

@@ -1,4 +1,4 @@
-CREATE TABLE event1 (
+CREATE TABLE events (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     stream_id VARCHAR(255) NOT NULL,
     payload JSON NOT NULL,
