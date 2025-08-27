@@ -34,16 +34,21 @@ func main() {
 		Consumer string
 		Handler  func(ctx context.Context, msg redislib.XMessage) error
 	}{
-		{"events", "worker-group", "worker-1", processor.HandleMessage},
+		// {"events", "worker-group", "worker-1", processor.HandleMessage},
 		{"series_queue", "worker-group", "worker-2", processor.HandleMessageStories},
-		{"chapter_queue", "worker-group", "worker-3", processor.HandleMessageChapter},
-		{"images_queue", "worker-group", "worker-4", processor.HandleMessageImages},
+		// {"chapter_queue", "worker-group", "worker-3", processor.HandleMessageChapter},
+		// {"images_queue", "worker-group1", "worker-4", processor.HandleMessageImages},
 	}
 
 	var wg sync.WaitGroup
 
 	// Tạo 4 goroutine để xử lý song song 4 queue
 	for _, s := range streams {
+		if err := redis.EnsureConsumerGroup(rdb, s.Name, s.Group, true); err != nil {
+			log.Fatalf("cannot create group for stream %s: %v", s.Name, err)
+		} else {
+			fmt.Printf("Consumer group ensured for stream %s and group %s\n", s.Name, s.Group)
+		}
 		wg.Add(1)
 		go func(s struct {
 			Name     string
@@ -61,6 +66,7 @@ func main() {
 
 				for _, m := range msgs {
 					if err := s.Handler(ctx, m); err != nil {
+						fmt.Printf("Inserted error: %s", s.Name)
 						log.Println("process error:", err)
 					} else {
 						fmt.Printf("[%s] Inserted: %s\n", s.Name, m.ID)

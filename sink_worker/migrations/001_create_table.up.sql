@@ -26,17 +26,17 @@ CREATE TABLE `chapter` (
   CONSTRAINT `fk_chapter_story` FOREIGN KEY (`story_id`) REFERENCES `stories` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
--- story.images definition
+-- test.images definition
 
 CREATE TABLE `images` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `story_id` varchar(100) NOT NULL,
   `chapter_id` bigint(20) NOT NULL,
   `url` text NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `referer` varchar(500) DEFAULT NULL,
   `title` varchar(100) DEFAULT NULL,
-  `order_stt` int(10) unsigned DEFAULT NULL,
+  `order_stt` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `fk_image_chapter` (`chapter_id`),
-  CONSTRAINT `fk_image_chapter` FOREIGN KEY (`chapter_id`) REFERENCES `chapter` (`id`) ON DELETE CASCADE
+  KEY `fk_image_chapter` (`chapter_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;

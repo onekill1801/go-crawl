@@ -29,12 +29,13 @@ type Event struct {
 
 type Image struct {
 	ID        int64
+	StoryID   string
 	ChapterID int64
 	Url       string
 	CreatedAt time.Time
 	Referer   sql.NullString
 	Title     sql.NullString
-	OrderStt  sql.NullInt32
+	OrderStt  uint32
 }
 
 type Story struct {

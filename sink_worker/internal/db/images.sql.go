@@ -11,21 +11,23 @@ import (
 )
 
 const createImage = `-- name: CreateImage :exec
-INSERT INTO images (chapter_id, url, referer, title, order_stt)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO images (chapter_id, story_id, url, referer, title, order_stt)
+VALUES (?, ?, ?, ?, ?, ?)
 `
 
 type CreateImageParams struct {
 	ChapterID int64
+	StoryID   string
 	Url       string
 	Referer   sql.NullString
 	Title     sql.NullString
-	OrderStt  sql.NullInt32
+	OrderStt  uint32
 }
 
 func (q *Queries) CreateImage(ctx context.Context, arg CreateImageParams) error {
 	_, err := q.db.ExecContext(ctx, createImage,
 		arg.ChapterID,
+		arg.StoryID,
 		arg.Url,
 		arg.Referer,
 		arg.Title,
@@ -44,7 +46,7 @@ func (q *Queries) DeleteImage(ctx context.Context, id int64) error {
 }
 
 const getImage = `-- name: GetImage :one
-SELECT id, chapter_id, url, created_at, referer, title, order_stt FROM images WHERE id = ? LIMIT 1
+SELECT id, story_id, chapter_id, url, created_at, referer, title, order_stt FROM images WHERE id = ? LIMIT 1
 `
 
 func (q *Queries) GetImage(ctx context.Context, id int64) (Image, error) {
@@ -52,6 +54,7 @@ func (q *Queries) GetImage(ctx context.Context, id int64) (Image, error) {
 	var i Image
 	err := row.Scan(
 		&i.ID,
+		&i.StoryID,
 		&i.ChapterID,
 		&i.Url,
 		&i.CreatedAt,
@@ -63,7 +66,7 @@ func (q *Queries) GetImage(ctx context.Context, id int64) (Image, error) {
 }
 
 const listImagesByChapter = `-- name: ListImagesByChapter :many
-SELECT id, chapter_id, url, created_at, referer, title, order_stt FROM images
+SELECT id, story_id, chapter_id, url, created_at, referer, title, order_stt FROM images
 WHERE chapter_id = ?
 ORDER BY order_stt ASC, created_at ASC
 LIMIT ? OFFSET ?
@@ -86,6 +89,7 @@ func (q *Queries) ListImagesByChapter(ctx context.Context, arg ListImagesByChapt
 		var i Image
 		if err := rows.Scan(
 			&i.ID,
+			&i.StoryID,
 			&i.ChapterID,
 			&i.Url,
 			&i.CreatedAt,
@@ -116,7 +120,7 @@ type UpdateImageParams struct {
 	Url      string
 	Referer  sql.NullString
 	Title    sql.NullString
-	OrderStt sql.NullInt32
+	OrderStt uint32
 	ID       int64
 }
 
