@@ -1,5 +1,7 @@
 package story
 
+import "time"
+
 type CreateStoryRequest struct {
 	Title    string `json:"title"  binding:"required,min=1"`
 	Author   string `json:"author" binding:"required"`
@@ -7,8 +9,9 @@ type CreateStoryRequest struct {
 }
 
 type StoryResponse struct {
-	ID       string `json:"id"`
-	Title    string `json:"title"`
-	Author   string `json:"author"`
-	CoverURL string `json:"cover_url"`
+	ID        string    `json:"id"`
+	Title     string    `json:"title"`
+	Author    string    `json:"author"`
+	CoverURL  string    `json:"cover_url"`
+	CreatedAt time.Time `json:"created_at"`
 }

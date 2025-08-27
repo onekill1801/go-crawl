@@ -11,6 +11,18 @@ type StoryRepository interface {
 	List(ctx context.Context, offset, limit int) ([]model.Story, error)
 }
 
+type ChapterRepository interface {
+	Create(ctx context.Context, s *model.Chapter) error
+	GetByID(ctx context.Context, id string) (*model.Chapter, error)
+	List(ctx context.Context, offset, limit int) ([]model.Chapter, error)
+}
+
+type ImageRepository interface {
+	Create(ctx context.Context, s *model.Image) error
+	GetByID(ctx context.Context, id string) (*model.Image, error)
+	List(ctx context.Context, offset, limit int) ([]model.Image, error)
+}
+
 type InMemoryStoryRepo struct {
 	data map[string]model.Story
 }

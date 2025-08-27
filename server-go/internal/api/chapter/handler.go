@@ -1,4 +1,4 @@
-package story
+package chapter
 
 import (
 	"net/http"
@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Handler struct{ svc *service.StoryService }
+type Handler struct{ svc *service.ChapterService }
 
-func NewHandler(s *service.StoryService) *Handler { return &Handler{svc: s} }
+func NewHandler(s *service.ChapterService) *Handler { return &Handler{svc: s} }
 
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateStoryRequest
@@ -24,7 +24,7 @@ func (h *Handler) Create(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, StoryResponse{
-		ID: st.ID, Title: st.Title, Author: st.Author, CoverURL: st.CoverURL,
+		ID: "st.ID", Title: st.Title, Author: "st.Author", CoverURL: "st.CoverURL",
 	})
 }
 
@@ -37,7 +37,7 @@ func (h *Handler) Get(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, StoryResponse{
-		ID: st.ID, Title: st.Title, Author: st.Author, CoverURL: st.CoverURL,
+		ID: "st.ID", Title: st.Title, Author: "st.Author", CoverURL: "st.CoverURL",
 	})
 }
 
@@ -50,7 +50,7 @@ func (h *Handler) List(c *gin.Context) {
 
 	out := make([]StoryResponse, 0, len(list))
 	for _, s := range list {
-		out = append(out, StoryResponse{ID: s.ID, Title: s.Title, Author: s.Author, CoverURL: s.CoverURL})
+		out = append(out, StoryResponse{ID: "s.ID", Title: s.Title, Author: "s.Author", CoverURL: "s.CoverURL"})
 	}
 	c.JSON(http.StatusOK, out)
 }

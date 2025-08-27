@@ -66,7 +66,7 @@ func (h *Handler) List(c *gin.Context) {
 
 	out := make([]StoryResponse, 0, len(list))
 	for _, s := range list {
-		out = append(out, StoryResponse{ID: s.ID, Title: s.Title, Author: s.Author, CoverURL: s.CoverURL})
+		out = append(out, StoryResponse{ID: s.ID, Title: s.Title, Author: s.Author, CoverURL: s.CoverURL, CreatedAt: s.CreatedAt})
 	}
 	c.JSON(http.StatusOK, out)
 }

@@ -1,4 +1,4 @@
-package story
+package chapter
 
 import "github.com/gin-gonic/gin"
 
