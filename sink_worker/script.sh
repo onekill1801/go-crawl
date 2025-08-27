@@ -5,6 +5,7 @@ migrate -path ./migrations -database "mysql://root:your_root_password@tcp(192.16
 # go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest add variable to PATH
 # sqlc generate
 
+# XADD domain_queue * domain_url www.webtoons.com/en/
 # XGROUP DESTROY events worker-group
 # XGROUP CREATE events worker-group 0 MKSTREAM
 # XGROUP CREATE events worker-group $ MKSTREAM
