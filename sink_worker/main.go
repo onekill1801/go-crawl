@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 
 	dbgen "github.com/chungtv/sink_worker/internal/db" // sqlc generated
 
 	"github.com/chungtv/sink_worker/internal/redis"
 	"github.com/chungtv/sink_worker/internal/service"
+	redislib "github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -26,23 +28,47 @@ func main() {
 
 	processor := service.NewProcessor(q, rdb)
 
-	stream := "events"
-	group := "worker-group"
-	consumer := "worker-1"
-
-	for {
-		msgs, err := redis.ReadStream(ctx, rdb, stream, group, consumer)
-		if err != nil {
-			log.Println("read error:", err)
-			continue
-		}
-
-		for _, m := range msgs {
-			if err := processor.HandleMessage(ctx, m); err != nil {
-				log.Println("process error:", err)
-			} else {
-				fmt.Println("Inserted:", m.ID)
-			}
-		}
+	streams := []struct {
+		Name     string
+		Group    string
+		Consumer string
+		Handler  func(ctx context.Context, msg redislib.XMessage) error
+	}{
+		{"events", "worker-group", "worker-1", processor.HandleMessage},
+		{"series_queue", "worker-group", "worker-2", processor.HandleMessageStories},
+		{"chapter_queue", "worker-group", "worker-3", processor.HandleMessageChapter},
+		{"images_queue", "worker-group", "worker-4", processor.HandleMessageImages},
 	}
+
+	var wg sync.WaitGroup
+
+	// Tạo 4 goroutine để xử lý song song 4 queue
+	for _, s := range streams {
+		wg.Add(1)
+		go func(s struct {
+			Name     string
+			Group    string
+			Consumer string
+			Handler  func(ctx context.Context, msg redislib.XMessage) error
+		}) {
+			defer wg.Done()
+			for {
+				msgs, err := redis.ReadStream(ctx, rdb, s.Name, s.Group, s.Consumer)
+				if err != nil {
+					log.Println("read error:", err)
+					continue
+				}
+
+				for _, m := range msgs {
+					if err := s.Handler(ctx, m); err != nil {
+						log.Println("process error:", err)
+					} else {
+						fmt.Printf("[%s] Inserted: %s\n", s.Name, m.ID)
+					}
+				}
+			}
+		}(s)
+	}
+
+	wg.Wait()
 }

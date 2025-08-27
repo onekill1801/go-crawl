@@ -25,9 +25,61 @@ func (p *Processor) HandleMessage(ctx context.Context, msg redis.XMessage) error
 		return err
 	}
 
-	_, err = p.q.InsertEvent(ctx, db.InsertEventParams{
+	_, _ = p.q.InsertEvent(ctx, db.InsertEventParams{
 		StreamID: msg.ID,
 		Payload:  payload,
 	})
+
+	// dataStr, _ := msg.Values["data"].(string)
+	// if err := json.Unmarshal([]byte(dataStr), &parsed); err == nil {
+	// 	items = append(items, parsed)
+	// }
+
+	err = p.q.CreateChapter(ctx, db.CreateChapterParams{
+		StoryID: msg.ID,
+		Title:   msg.ID,
+	})
 	return err
+}
+
+func (p *Processor) HandleMessageStories(ctx context.Context, msg redis.XMessage) error {
+
+	_, _ = msg.Values["data"].(string)
+	// if err := json.Unmarshal([]byte(dataStr), &parsed); err == nil {
+	// 	items = append(items, parsed)
+	// }
+
+	// err = p.q.CreateChapter(ctx, db.CreateChapterParams{
+	// 	StoryID: msg.ID,
+	// 	Title:   msg.ID,
+	// })
+	return nil
+}
+
+func (p *Processor) HandleMessageChapter(ctx context.Context, msg redis.XMessage) error {
+
+	_, _ = msg.Values["data"].(string)
+	// if err := json.Unmarshal([]byte(dataStr), &parsed); err == nil {
+	// 	items = append(items, parsed)
+	// }
+
+	// err = p.q.CreateChapter(ctx, db.CreateChapterParams{
+	// 	StoryID: msg.ID,
+	// 	Title:   msg.ID,
+	// })
+	return nil
+}
+
+func (p *Processor) HandleMessageImages(ctx context.Context, msg redis.XMessage) error {
+
+	_, _ = msg.Values["data"].(string)
+	// if err := json.Unmarshal([]byte(dataStr), &parsed); err == nil {
+	// 	items = append(items, parsed)
+	// }
+
+	// err = p.q.CreateChapter(ctx, db.CreateChapterParams{
+	// 	StoryID: msg.ID,
+	// 	Title:   msg.ID,
+	// })
+	return nil
 }
