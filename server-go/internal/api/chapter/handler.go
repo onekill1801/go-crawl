@@ -41,6 +41,45 @@ func (h *Handler) Get(c *gin.Context) {
 	})
 }
 
+func (h *Handler) GetListImages(c *gin.Context) {
+	id := c.Param("id")
+	st, err := h.svc.Get(c.Request.Context(), id)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, StoryResponse{
+		ID: "st.ID", Title: st.Title, Author: "st.Author", CoverURL: "st.CoverURL",
+	})
+}
+
+func (h *Handler) GetListImagesNext(c *gin.Context) {
+	id := c.Param("id")
+	st, err := h.svc.Get(c.Request.Context(), id)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, StoryResponse{
+		ID: "st.ID", Title: st.Title, Author: "st.Author", CoverURL: "st.CoverURL",
+	})
+}
+
+func (h *Handler) GetListImagesPrevious(c *gin.Context) {
+	id := c.Param("id")
+	st, err := h.svc.Get(c.Request.Context(), id)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, StoryResponse{
+		ID: "st.ID", Title: st.Title, Author: "st.Author", CoverURL: "st.CoverURL",
+	})
+}
+
 func (h *Handler) List(c *gin.Context) {
 	list, err := h.svc.List(c.Request.Context(), 0, 50)
 	if err != nil {

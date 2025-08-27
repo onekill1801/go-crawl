@@ -50,8 +50,74 @@ func (r *MySQLChapterRepo) GetByID(ctx context.Context, id string) (*model.Chapt
 
 func (r *MySQLChapterRepo) List(ctx context.Context, offset, limit int) ([]model.Chapter, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, title, author, cover_url, created_at
+		`SELECT id, title, created_at
 		 FROM stories ORDER BY created_at DESC
+		 LIMIT ? OFFSET ?`, limit, offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []model.Chapter
+	for rows.Next() {
+		var s model.Chapter
+		if err := rows.Scan(&s.ID, &s.Title, &s.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, nil
+}
+
+func (r *MySQLChapterRepo) ListImages(ctx context.Context, offset, limit int) ([]model.Chapter, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT id, url, created_at
+		 FROM images ORDER BY created_at DESC
+		 LIMIT ? OFFSET ?`, limit, offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []model.Chapter
+	for rows.Next() {
+		var s model.Chapter
+		if err := rows.Scan(&s.ID, &s.Title, &s.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, nil
+}
+
+func (r *MySQLChapterRepo) ListImagesNext(ctx context.Context, offset, limit int) ([]model.Chapter, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT id, url, created_at
+		 FROM images ORDER BY created_at DESC
+		 LIMIT ? OFFSET ?`, limit, offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []model.Chapter
+	for rows.Next() {
+		var s model.Chapter
+		if err := rows.Scan(&s.ID, &s.Title, &s.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, nil
+}
+
+func (r *MySQLChapterRepo) ListImagesPrevious(ctx context.Context, offset, limit int) ([]model.Chapter, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT id, url, created_at
+		 FROM images ORDER BY created_at DESC
 		 LIMIT ? OFFSET ?`, limit, offset,
 	)
 	if err != nil {

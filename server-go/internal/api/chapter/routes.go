@@ -6,7 +6,7 @@ func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
 	g := rg.Group("/chapter")
 	g.POST("", h.Create)
 	g.GET("", h.List)
-	g.GET("/:id", h.Get)
-	g.GET("/:id/next", h.Get)
-	g.GET("/:id/previous", h.Get)
+	g.GET("/:id", h.GetListImages)
+	g.GET("/:id/next", h.GetListImagesNext)
+	g.GET("/:id/previous", h.GetListImagesPrevious)
 }

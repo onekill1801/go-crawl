@@ -15,6 +15,9 @@ type ChapterRepository interface {
 	Create(ctx context.Context, s *model.Chapter) error
 	GetByID(ctx context.Context, id string) (*model.Chapter, error)
 	List(ctx context.Context, offset, limit int) ([]model.Chapter, error)
+	ListImages(ctx context.Context, offset, limit int) ([]model.Chapter, error)
+	ListImagesNext(ctx context.Context, offset, limit int) ([]model.Chapter, error)
+	ListImagesPrevious(ctx context.Context, offset, limit int) ([]model.Chapter, error)
 }
 
 type ImageRepository interface {
