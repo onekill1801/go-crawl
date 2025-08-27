@@ -3,6 +3,7 @@ package app
 import (
 	"log"
 	"server/internal/api/story"
+	"server/internal/db"
 	"server/internal/middleware"
 	"server/internal/repository"
 	"server/internal/service"
@@ -15,7 +16,12 @@ func Setup() (*gin.Engine, *repository.MySQLStoryRepo) {
 	r := gin.Default()
 	r.Use(middleware.ErrorHandler())
 
-	storyRepo, err := repository.NewMySQLStoryRepo()
+	mysqlDB, err := db.NewMySQL()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	storyRepo := repository.NewMySQLStoryRepo(mysqlDB)
 	if err != nil {
 		log.Fatal(err)
 	}

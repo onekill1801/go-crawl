@@ -14,19 +14,8 @@ type MySQLStoryRepo struct {
 }
 
 // Khởi tạo repo với db đã kết nối
-func NewMySQLStoryRepo() (*MySQLStoryRepo, error) {
-	dsn := "root:your_root_password@tcp(192.168.1.6:5306)/story?parseTime=true"
-	db, err := sql.Open("mysql", dsn)
-	if err != nil {
-		return nil, fmt.Errorf("cannot open mysql: %w", err)
-	}
-
-	// Kiểm tra kết nối thực sự
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("cannot ping mysql: %w", err)
-	}
-
-	return &MySQLStoryRepo{db: db}, nil
+func NewMySQLStoryRepo(db *sql.DB) *MySQLStoryRepo {
+	return &MySQLStoryRepo{db: db}
 }
 
 func (r *MySQLStoryRepo) Close() error {
