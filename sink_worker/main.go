@@ -7,7 +7,6 @@ import (
 
 	dbgen "github.com/chungtv/sink_worker/internal/db" // sqlc generated
 
-	"github.com/chungtv/sink_worker/internal/db"
 	"github.com/chungtv/sink_worker/internal/redis"
 	"github.com/chungtv/sink_worker/internal/service"
 )
@@ -16,7 +15,7 @@ func main() {
 	ctx := context.Background()
 
 	// Kết nối MySQL
-	database, err := db.NewDB("root:your_root_password@tcp(192.168.1.6:5306)/test?parseTime=true")
+	database, err := dbgen.NewDB("root:your_root_password@tcp(192.168.1.6:5306)/test?parseTime=true")
 	if err != nil {
 		log.Fatal("cannot connect db:", err)
 	}

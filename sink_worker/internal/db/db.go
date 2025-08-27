@@ -17,6 +17,10 @@ type DBTX interface {
 	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
 }
 
+func NewDB(dsn string) (*sql.DB, error) {
+    return sql.Open("mysql", dsn)
+}
+
 func New(db DBTX) *Queries {
 	return &Queries{db: db}
 }
@@ -31,6 +35,3 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	}
 }
 
-func NewDB(dsn string) (*sql.DB, error) {
-    return sql.Open("mysql", dsn)
-}
