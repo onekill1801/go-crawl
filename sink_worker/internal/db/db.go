@@ -7,6 +7,7 @@ package db
 import (
 	"context"
 	"database/sql"
+    _ "github.com/go-sql-driver/mysql"
 )
 
 type DBTX interface {

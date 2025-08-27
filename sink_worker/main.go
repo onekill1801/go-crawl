@@ -16,7 +16,7 @@ func main() {
 	ctx := context.Background()
 
 	// Kết nối MySQL
-	database, err := db.NewDB("user:password@tcp(localhost:3306)/mydb?parseTime=true")
+	database, err := db.NewDB("root:your_root_password@tcp(192.168.1.6:5306)/test?parseTime=true")
 	if err != nil {
 		log.Fatal("cannot connect db:", err)
 	}
