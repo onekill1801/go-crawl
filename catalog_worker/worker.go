@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"catalog/parser"
@@ -20,19 +22,25 @@ type DomainJob struct {
 
 type SeriesJob struct {
 	SeriesURL string `json:"series_url"`
+	StoryID   string `json:"story_id"`
 }
 
 type ChapterJob struct {
 	ChapterURL string `json:"chapter_url"`
 	Title      string `json:"title"`
 	SeriesID   string `json:"series_id"`
+	OrderStt   int32  `json:"order_stt"`
+	StoryID    string `json:"story_id"`
+	ImageUrl   string `json:"image_url"`
 }
 
 type ImagesJob struct {
-	Referer  string `json:"referer"`
-	ImageURL string `json:"image_url"`
-	Title    string `json:"title"`
-	Order    int    `json:"order"`
+	Referer   string `json:"referer"`
+	ImageURL  string `json:"image_url"`
+	Title     string `json:"title"`
+	OrderStt  int    `json:"order"`
+	StoryID   string `json:"story_id"`
+	ChapterID int64  `json:"chapter_id"`
 }
 
 // func fetchHTML(url string) (*html.Node, error) {
@@ -98,10 +106,25 @@ func ProcessDomainJob(job DomainJob, q *queue.RedisQueue) error {
 	}
 
 	for _, series := range seriesList {
-		q.Push("series_queue", SeriesJob{SeriesURL: series.LinkNovel})
+		id, _ := extractTitleNo(series.LinkNovel)
+		q.Push("series_queue", SeriesJob{
+			SeriesURL: series.LinkNovel,
+			StoryID:   strconv.FormatInt(id, 10),
+		})
 	}
 
 	return nil
+}
+
+func extractTitleNo(url string) (int64, error) {
+	re := regexp.MustCompile(`title_no=(\d+)`)
+	matches := re.FindStringSubmatch(url)
+	if len(matches) < 2 {
+		return 0, fmt.Errorf("title_no not found in url: %s", url)
+	}
+	var num int64
+	fmt.Sscanf(matches[1], "%d", &num)
+	return num, nil
 }
 
 var index = 1
@@ -130,14 +153,30 @@ func ProcessSeriesJob(job SeriesJob, q *queue.RedisQueue) error {
 	}
 
 	for _, chap := range chapters {
+		orderStt, _ := extractChapterNumber(chap.Title)
 		q.Push("chapter_queue", ChapterJob{
 			ChapterURL: chap.URL,
 			Title:      chap.Title,
 			SeriesID:   generateID(job.SeriesURL),
+			OrderStt:   orderStt,
 		})
 	}
 
 	return nil
+}
+
+func extractChapterNumber(title string) (int32, error) {
+	re := regexp.MustCompile(`(?i)^Ep\.?\s*(\d+)`)
+	matches := re.FindStringSubmatch(title)
+	if len(matches) < 2 {
+		return 0, fmt.Errorf("no chapter number found in: %s", title)
+	}
+
+	num, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return 0, err
+	}
+	return int32(num), nil
 }
 
 func extractDomain(url string) string {
@@ -203,10 +242,12 @@ func ProcessImagesJob(job SeriesJob, q *queue.RedisQueue) error {
 
 	for _, img := range images {
 		q.Push("images_queue", ImagesJob{
-			ImageURL: img.URL,
-			Title:    img.Title,
-			Order:    img.Order,
-			Referer:  img.Referer,
+			ImageURL:  img.URL,
+			Title:     img.Title,
+			OrderStt:  img.Order,
+			Referer:   img.Referer,
+			StoryID:   "1",
+			ChapterID: 554,
 		})
 	}
 

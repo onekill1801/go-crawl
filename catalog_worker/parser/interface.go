@@ -25,6 +25,8 @@ type ImagesChapter struct {
 	Title      string
 	Referer    string
 	Order      int
+	StoryID    string
+	ChapterID  int64
 }
 
 type Parser interface {

@@ -298,6 +298,8 @@ func (p *TruyenDepParser) GetListImages(doc *html.Node) ([]ImagesChapter, error)
 									Title:      "title",
 									Order:      order,
 									Referer:    "https://www.webtoons.com",
+									StoryID:    "storyID",
+									ChapterID:  1,
 								})
 								order++
 								break
