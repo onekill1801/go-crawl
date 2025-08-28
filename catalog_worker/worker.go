@@ -159,6 +159,7 @@ func ProcessSeriesJob(job SeriesJob, q *queue.RedisQueue) (int, error) {
 			Title:      chap.Title,
 			SeriesID:   generateID(job.SeriesURL),
 			OrderStt:   orderStt,
+			StoryID:    job.StoryID,
 		})
 	}
 
@@ -166,7 +167,9 @@ func ProcessSeriesJob(job SeriesJob, q *queue.RedisQueue) (int, error) {
 }
 
 func extractChapterNumber(title string) (int32, error) {
-	re := regexp.MustCompile(`(?i)^Ep\.?\s*(\d+)`)
+	// (?i) => ignore case
+	// ^\s*(?:Ep\.?|Episode)\s*(\d+)
+	re := regexp.MustCompile(`(?i)^\s*(?:Ep\.?|Episode\.?)\s*(\d+)`)
 	matches := re.FindStringSubmatch(title)
 	if len(matches) < 2 {
 		return 0, fmt.Errorf("no chapter number found in: %s", title)
@@ -223,14 +226,14 @@ func logTextToFile(doc *html.Node, filename string) error {
 	return nil
 }
 
-func ProcessImagesJob(job SeriesJob, q *queue.RedisQueue) error {
+func ProcessImagesJob(job ImagesJob, q *queue.RedisQueue) error {
 	domain := "www.webtoons.com/en/"
 	parser := parser.GetParserForDomain(domain)
 	if parser == nil {
 		return fmt.Errorf("no parser for domain: %s", domain)
 	}
 
-	doc, err := fetchHTML(job.SeriesURL)
+	doc, err := fetchHTML(job.ImageURL)
 
 	if err != nil {
 		return err
@@ -246,8 +249,8 @@ func ProcessImagesJob(job SeriesJob, q *queue.RedisQueue) error {
 			Title:     img.Title,
 			OrderStt:  img.Order,
 			Referer:   img.Referer,
-			StoryID:   "1",
-			ChapterID: 554,
+			StoryID:   job.StoryID,
+			ChapterID: int64(job.ChapterID),
 		})
 	}
 
