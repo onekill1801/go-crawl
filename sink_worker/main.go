@@ -16,8 +16,11 @@ import (
 func main() {
 	ctx := context.Background()
 
+	dns := "root:your_root_password@tcp(192.168.1.6:5306)"
+	migrate1(dns)
+
 	// Kết nối MySQL
-	database, err := dbgen.NewDB("root:your_root_password@tcp(192.168.1.6:5306)/test?parseTime=true")
+	database, err := dbgen.NewDB(dns + "?parseTime=true")
 	if err != nil {
 		log.Fatal("cannot connect db:", err)
 	}
@@ -35,16 +38,16 @@ func main() {
 		Handler  func(ctx context.Context, msg redislib.XMessage) error
 	}{
 		// {"events", "worker-group", "worker-1", processor.HandleMessage},
-		{"series_queue", "worker-group", "worker-2", processor.HandleMessageStories},
-		{"chapter_queue", "worker-group", "worker-3", processor.HandleMessageChapter},
-		{"images_queue", "worker-group1", "worker-4", processor.HandleMessageImages},
+		{"series_queue", "worker-sink", "worker-2", processor.HandleMessageStories},
+		{"chapter_queue", "worker-sink", "worker-3", processor.HandleMessageChapter},
+		{"images_queue", "worker-sink", "worker-4", processor.HandleMessageImages},
 	}
 
 	var wg sync.WaitGroup
 
 	// Tạo 4 goroutine để xử lý song song 4 queue
 	for _, s := range streams {
-		if err := redis.EnsureConsumerGroup(rdb, s.Name, s.Group, true); err != nil {
+		if err := redis.EnsureConsumerGroup(rdb, s.Name, s.Group, false); err != nil {
 			log.Fatalf("cannot create group for stream %s: %v", s.Name, err)
 		} else {
 			fmt.Printf("Consumer group ensured for stream %s and group %s\n", s.Name, s.Group)
