@@ -40,7 +40,7 @@ func chapterRunning(ctx context.Context, q *queue.RedisQueue, msg redis.XMessage
 		}
 
 		// nếu maxPage >= page thì dừng luôn
-		if maxPage >= page {
+		if maxPage <= page {
 			fmt.Println("Max page found:", maxPage, " -> stop processing")
 			break
 		}
