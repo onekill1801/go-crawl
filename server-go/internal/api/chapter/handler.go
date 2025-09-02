@@ -49,19 +49,30 @@ func (h *Handler) Get(c *gin.Context) {
 	})
 }
 
-func (h *Handler) GetListImages(c *gin.Context) {
-	id := c.Param("chapterId")
-	storyID := c.Param("storyId")
-	a := c.Query("offset")
-	cVar := c.Query("limit")
-	fmt.Println(">>> a:", a, " - c:", cVar)
-	fmt.Println(">>> id:", id, " - storyID:", storyID)
+func (h *Handler) getListImages(c *gin.Context, delta int) {
+	chapterIDStr := c.Param("chapterId")
+	chapterID, err := strconv.Atoi(chapterIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid chapterId"})
+		return
+	}
 
-	list, err := h.svc.GetListByID(c.Request.Context(), storyID, id)
+	storyID := c.Param("storyId")
+	targetChapterID := strconv.Itoa(chapterID + delta)
+
+	// debug query param (offset, limit)
+	offset := c.Query("offset")
+	limit := c.Query("limit")
+	fmt.Println(">>> offset:", offset, " - limit:", limit)
+	fmt.Println(">>> chapterId:", targetChapterID, " - storyId:", storyID)
+
+	// query DB
+	list, err := h.svc.GetListByID(c.Request.Context(), storyID, targetChapterID)
 	if err != nil {
 		c.Error(err)
 		return
 	}
+
 	c.Header("X-Total-Count", strconv.Itoa(len(list)))
 
 	out := make([]ImageResponse, 0, len(list))
@@ -76,33 +87,20 @@ func (h *Handler) GetListImages(c *gin.Context) {
 		})
 	}
 	c.JSON(http.StatusOK, out)
+}
 
+// === Handler public ===
+
+func (h *Handler) GetListImages(c *gin.Context) {
+	h.getListImages(c, 0) // giữ nguyên chapterId
 }
 
 func (h *Handler) GetListImagesNext(c *gin.Context) {
-	id := c.Param("id")
-	st, err := h.svc.Get(c.Request.Context(), id)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	c.JSON(http.StatusOK, StoryResponse{
-		ID: "st.ID", Title: st.Title, Author: "st.Author", CoverURL: "st.CoverURL",
-	})
+	h.getListImages(c, 1) // chapterId +1
 }
 
 func (h *Handler) GetListImagesPrevious(c *gin.Context) {
-	id := c.Param("id")
-	st, err := h.svc.Get(c.Request.Context(), id)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	c.JSON(http.StatusOK, StoryResponse{
-		ID: "st.ID", Title: st.Title, Author: "st.Author", CoverURL: "st.CoverURL",
-	})
+	h.getListImages(c, -1) // chapterId -1
 }
 
 func (h *Handler) List(c *gin.Context) {
