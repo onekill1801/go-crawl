@@ -6,6 +6,9 @@ migrate -path ./migrations -database "mysql://root:your_root_password@tcp(192.16
 # sqlc generate
 
 # XADD domain_queue * domain_url www.webtoons.com/en/
+XPENDING chapter_queue worker-sink
+XPENDING chapter_queue worker-sink COUNT 10
+
 # XGROUP DESTROY events worker-group
 # XGROUP CREATE events worker-group 0 MKSTREAM
 # XGROUP CREATE events worker-group $ MKSTREAM

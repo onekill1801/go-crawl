@@ -16,7 +16,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	dns := "root:your_root_password@tcp(192.168.1.6:5306)"
+	dns := "root:your_root_password@tcp(192.168.1.6:5306)/story"
 	migrate1(dns)
 
 	// Kết nối MySQL

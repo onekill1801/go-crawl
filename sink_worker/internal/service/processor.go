@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/chungtv/sink_worker/internal/db"
 
@@ -100,8 +101,8 @@ func (p *Processor) HandleMessageChapter(ctx context.Context, msg redis.XMessage
 		params.Title = title
 	}
 
-	if title, ok := msg.Values["title"].(string); ok {
-		if num, err := extractChapterNumber(title); err == nil {
+	if numStr, ok := msg.Values["chapter_url"].(string); ok {
+		if num, err := extractChapterNumber(numStr); err == nil {
 			params.OrderStt = sql.NullInt32{
 				Int32: int32(num),
 				Valid: true,
@@ -119,17 +120,42 @@ func (p *Processor) HandleMessageChapter(ctx context.Context, msg redis.XMessage
 	return nil
 }
 
-func extractChapterNumber(title string) (int32, error) {
-	re := regexp.MustCompile(`(?i)^Ep\.?\s*(\d+)`)
-	matches := re.FindStringSubmatch(title)
-	if len(matches) < 2 {
-		return 0, fmt.Errorf("no chapter number found in: %s", title)
+// func extractChapterNumber(title string) (int32, error) {
+// 	re := regexp.MustCompile(`(?i)^Ep\.?\s*(\d+)`)
+// 	matches := re.FindStringSubmatch(title)
+// 	if len(matches) < 2 {
+// 		return 0, fmt.Errorf("no chapter number found in: %s", title)
+// 	}
+
+// 	num, err := strconv.Atoi(matches[1])
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	return int32(num), nil
+// }
+
+func extractChapterNumber(link string) (int32, error) {
+	const key = "episode_no="
+	pos := strings.Index(link, key)
+	if pos == -1 {
+		return 0, fmt.Errorf("episode_no not found in: %s", link)
 	}
 
-	num, err := strconv.Atoi(matches[1])
-	if err != nil {
-		return 0, err
+	// Lấy chuỗi bắt đầu từ sau "episode_no="
+	start := pos + len(key)
+	rest := link[start:]
+
+	// Cắt nếu có thêm tham số sau số
+	end := strings.IndexAny(rest, "&?#")
+	if end != -1 {
+		rest = rest[:end]
 	}
+
+	num, err := strconv.Atoi(rest)
+	if err != nil {
+		return 0, fmt.Errorf("invalid episode_no: %w", err)
+	}
+
 	return int32(num), nil
 }
 
