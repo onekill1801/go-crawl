@@ -34,18 +34,43 @@ func (r *MySQLChapterRepo) Create(ctx context.Context, s *model.Chapter) error {
 
 func (r *MySQLChapterRepo) GetByID(ctx context.Context, id string) (*model.Chapter, error) {
 	row := r.db.QueryRowContext(ctx,
-		`SELECT id, title, author, cover_url, created_at
-		 FROM stories WHERE id = ?`, id,
+		`SELECT id, title, story_id, content, order_stt, created_at
+		 FROM chapter WHERE story_id = ?`, id,
 	)
 
 	var s model.Chapter
-	if err := row.Scan(&s.ID, &s.Title, &s.CreatedAt); err != nil {
+	if err := row.Scan(&s.ID, &s.Title, &s.StoryID, &s.Content, &s.OrderStt, &s.CreatedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
 	return &s, nil
+}
+
+func (r *MySQLChapterRepo) GetListByID(ctx context.Context, id string) ([]model.Chapter, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT id, title, story_id, content, order_stt, created_at
+		 FROM chapter WHERE story_id = ?`, id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []model.Chapter
+	for rows.Next() {
+		var s model.Chapter
+		if err := rows.Scan(&s.ID, &s.Title, &s.StoryID, &s.Content, &s.OrderStt, &s.CreatedAt); err != nil {
+			if len(out) == 0 {
+				return nil, ErrNotFound
+			}
+			return nil, err
+		}
+
+		out = append(out, s)
+	}
+	return out, nil
 }
 
 func (r *MySQLChapterRepo) List(ctx context.Context, offset, limit int) ([]model.Chapter, error) {

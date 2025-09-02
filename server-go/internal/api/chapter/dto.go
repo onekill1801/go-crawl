@@ -20,10 +20,13 @@ type CreateChapterRequest struct {
 }
 
 type ChapterResponse struct {
-	ID       string `json:"id"`
-	Title    string `json:"title"`
-	Author   string `json:"author"`
-	CoverURL string `json:"cover_url"`
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	StoryID   string `json:"story_id"`
+	Content   string `json:"content"`
+	ImageURL  string `json:"image_url"`
+	OrderStt  int64  `json:"order_stt"`
+	CreatedAt string `json:"created_at"`
 }
 
 type CreateImageRequest struct {

@@ -14,6 +14,7 @@ type StoryRepository interface {
 type ChapterRepository interface {
 	Create(ctx context.Context, s *model.Chapter) error
 	GetByID(ctx context.Context, id string) (*model.Chapter, error)
+	GetListByID(ctx context.Context, id string) ([]model.Chapter, error)
 	List(ctx context.Context, offset, limit int) ([]model.Chapter, error)
 	ListImages(ctx context.Context, offset, limit int) ([]model.Chapter, error)
 	ListImagesNext(ctx context.Context, offset, limit int) ([]model.Chapter, error)

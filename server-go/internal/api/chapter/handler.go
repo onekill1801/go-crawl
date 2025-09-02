@@ -3,6 +3,7 @@ package chapter
 import (
 	"net/http"
 	"server/internal/service"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,22 +37,40 @@ func (h *Handler) Get(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, StoryResponse{
-		ID: "st.ID", Title: st.Title, Author: "st.Author", CoverURL: "st.CoverURL",
+	c.JSON(http.StatusOK, ChapterResponse{
+		ID:        strconv.FormatInt(st.ID, 10),
+		Title:     st.Title,
+		StoryID:   st.StoryID,
+		Content:   st.Content,
+		ImageURL:  st.ImageURL,
+		OrderStt:  st.OrderStt,
+		CreatedAt: st.CreatedAt.String(),
 	})
 }
 
 func (h *Handler) GetListImages(c *gin.Context) {
 	id := c.Param("id")
-	st, err := h.svc.Get(c.Request.Context(), id)
+	list, err := h.svc.GetListByID(c.Request.Context(), id)
 	if err != nil {
 		c.Error(err)
 		return
 	}
+	c.Header("X-Total-Count", strconv.Itoa(len(list)))
 
-	c.JSON(http.StatusOK, StoryResponse{
-		ID: "st.ID", Title: st.Title, Author: "st.Author", CoverURL: "st.CoverURL",
-	})
+	out := make([]ChapterResponse, 0, len(list))
+	for _, st := range list {
+		out = append(out, ChapterResponse{
+			ID:        strconv.FormatInt(st.ID, 10),
+			Title:     st.Title,
+			StoryID:   st.StoryID,
+			Content:   st.Content,
+			ImageURL:  st.ImageURL,
+			OrderStt:  st.OrderStt,
+			CreatedAt: st.CreatedAt.String(),
+		})
+	}
+	c.JSON(http.StatusOK, out)
+
 }
 
 func (h *Handler) GetListImagesNext(c *gin.Context) {
