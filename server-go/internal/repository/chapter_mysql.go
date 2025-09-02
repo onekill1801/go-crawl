@@ -48,20 +48,20 @@ func (r *MySQLChapterRepo) GetByID(ctx context.Context, id string) (*model.Chapt
 	return &s, nil
 }
 
-func (r *MySQLChapterRepo) GetListByID(ctx context.Context, id string) ([]model.Chapter, error) {
+func (r *MySQLChapterRepo) GetListByID(ctx context.Context, chapter_id, story_id string) ([]model.Image, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, title, story_id, content, order_stt, created_at
-		 FROM chapter WHERE story_id = ?`, id,
+		`SELECT id, story_id, chapter_id, url, referer, order_stt, created_at
+		 FROM images WHERE story_id = ? and chapter_id = ?`, story_id, chapter_id,
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var out []model.Chapter
+	var out []model.Image
 	for rows.Next() {
-		var s model.Chapter
-		if err := rows.Scan(&s.ID, &s.Title, &s.StoryID, &s.Content, &s.OrderStt, &s.CreatedAt); err != nil {
+		var s model.Image
+		if err := rows.Scan(&s.ID, &s.StoryID, &s.ChapterId, &s.ImageURL, &s.Referer, &s.OrderStt, &s.CreatedAt); err != nil {
 			if len(out) == 0 {
 				return nil, ErrNotFound
 			}

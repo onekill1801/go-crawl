@@ -33,8 +33,8 @@ func (s *ChapterService) Get(ctx context.Context, id string) (*model.Chapter, er
 	return s.repo.GetByID(ctx, id)
 }
 
-func (s *ChapterService) GetListByID(ctx context.Context, id string) ([]model.Chapter, error) {
-	return s.repo.GetListByID(ctx, id)
+func (s *ChapterService) GetListByID(ctx context.Context, chapter_id, story_id string) ([]model.Image, error) {
+	return s.repo.GetListByID(ctx, story_id, chapter_id)
 }
 
 func (s *ChapterService) List(ctx context.Context, offset, limit int) ([]model.Chapter, error) {

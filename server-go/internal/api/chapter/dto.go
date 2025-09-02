@@ -36,8 +36,12 @@ type CreateImageRequest struct {
 }
 
 type ImageResponse struct {
-	ID       string `json:"id"`
-	Title    string `json:"title"`
-	Author   string `json:"author"`
-	CoverURL string `json:"cover_url"`
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	StoryID   string `json:"story_id"`
+	ImageURL  string `json:"image_url"`
+	OrderStt  int64  `json:"order_stt"`
+	CreatedAt string `json:"created_at"`
+	ChapterId int64  `json:"chapter_id"`
+	Referer   string `json:"referer"`
 }

@@ -1,6 +1,7 @@
 package chapter
 
 import (
+	"fmt"
 	"net/http"
 	"server/internal/service"
 	"strconv"
@@ -49,21 +50,26 @@ func (h *Handler) Get(c *gin.Context) {
 }
 
 func (h *Handler) GetListImages(c *gin.Context) {
-	id := c.Param("id")
-	list, err := h.svc.GetListByID(c.Request.Context(), id)
+	id := c.Param("chapterId")
+	storyID := c.Param("storyId")
+	a := c.Query("offset")
+	cVar := c.Query("limit")
+	fmt.Println(">>> a:", a, " - c:", cVar)
+	fmt.Println(">>> id:", id, " - storyID:", storyID)
+
+	list, err := h.svc.GetListByID(c.Request.Context(), storyID, id)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 	c.Header("X-Total-Count", strconv.Itoa(len(list)))
 
-	out := make([]ChapterResponse, 0, len(list))
+	out := make([]ImageResponse, 0, len(list))
 	for _, st := range list {
-		out = append(out, ChapterResponse{
-			ID:        strconv.FormatInt(st.ID, 10),
-			Title:     st.Title,
+		out = append(out, ImageResponse{
+			ID:        st.ID,
+			ChapterId: st.ChapterId,
 			StoryID:   st.StoryID,
-			Content:   st.Content,
 			ImageURL:  st.ImageURL,
 			OrderStt:  st.OrderStt,
 			CreatedAt: st.CreatedAt.String(),

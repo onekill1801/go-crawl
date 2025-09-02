@@ -23,6 +23,7 @@ type Chapter struct {
 type Image struct {
 	ID        string
 	Title     string
+	StoryID   string
 	ChapterId int64
 	Referer   string
 	ImageURL  string
