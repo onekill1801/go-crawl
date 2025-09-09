@@ -83,6 +83,7 @@ func (h *Handler) getListImages(c *gin.Context, delta int) {
 			StoryID:   st.StoryID,
 			ImageURL:  st.ImageURL,
 			OrderStt:  st.OrderStt,
+			Referer:   st.Referer,
 			CreatedAt: st.CreatedAt.String(),
 		})
 	}
