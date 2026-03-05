@@ -1,13 +1,36 @@
-version: '3.8'
-
 services:
   redis:
-    image: redis:7
-    container_name: redis
+    image: redis:7-alpine
+    container_name: crawl-redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  mysql:
+    image: mysql:8.0
+    container_name: crawl-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-crawl_secret}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-story}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 volumes:
   redis_data:
+  mysql_data:

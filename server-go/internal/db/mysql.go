@@ -4,12 +4,16 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
 func NewMySQL() (*sql.DB, error) {
-	dsn := "root:your_root_password@tcp(192.168.1.6:5306)/story?parseTime=true"
+	dsn := os.Getenv("MYSQL_DSN")
+	if dsn == "" {
+		dsn = "root:crawl_secret@tcp(localhost:3306)/story?parseTime=true"
+	}
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open mysql: %w", err)

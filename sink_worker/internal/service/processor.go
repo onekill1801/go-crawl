@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/chungtv/sink_worker/internal/db"
 
@@ -50,19 +51,19 @@ func (p *Processor) HandleMessage(ctx context.Context, msg redis.XMessage) error
 func (p *Processor) HandleMessageStories(ctx context.Context, msg redis.XMessage) error {
 	var params db.CreateStoryParams
 
-	// Parse StoryID
+	// Parse StoryID và URL
 	if storyURL, ok := msg.Values["series_url"].(string); ok {
 		id, err := extractTitleNo(storyURL)
 		if err != nil {
 			return fmt.Errorf("cannot extract title_no: %w", err)
 		}
-		params.ID = strconv.FormatInt(id, 10) // chuyển int64 -> string
+		params.ID = strconv.FormatInt(id, 10)
+		params.CoverUrl = sql.NullString{String: storyURL, Valid: storyURL != ""}
+		params.DomainLink = sql.NullString{String: storyURL, Valid: storyURL != ""}
 	}
-
-	// Parse Url
-	if url, ok := msg.Values["series_url"].(string); ok {
-		params.CoverUrl = sql.NullString{String: url, Valid: url != ""}
-	}
+	// Title, Author bắt buộc trong DB — dùng placeholder nếu message không gửi
+	params.Title = "Story " + params.ID
+	params.Author = ""
 
 	// Insert vào DB (sqlc generated)
 	if err := p.q.CreateStory(ctx, params); err != nil {
@@ -112,8 +113,15 @@ func (p *Processor) HandleMessageChapter(ctx context.Context, msg redis.XMessage
 		}
 	}
 
-	// Insert vào DB (sqlc generated)
+	// Insert vào DB (sqlc generated). Retry 1 lần nếu lỗi FK (story chưa insert kịp).
 	if err := p.q.CreateChapter(ctx, params); err != nil {
+		if strings.Contains(err.Error(), "1452") || strings.Contains(err.Error(), "foreign key") {
+			time.Sleep(2 * time.Second)
+			if err2 := p.q.CreateChapter(ctx, params); err2 != nil {
+				return fmt.Errorf("insert chapter error (retry): %w", err2)
+			}
+			return nil
+		}
 		return fmt.Errorf("insert chapter error: %w", err)
 	}
 

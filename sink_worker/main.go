@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"strings"
 	"sync"
 
 	dbgen "github.com/chungtv/sink_worker/internal/db" // sqlc generated
@@ -16,18 +18,38 @@ import (
 func main() {
 	ctx := context.Background()
 
-	dns := "root:your_root_password@tcp(192.168.1.6:5306)/story"
-	migrate1(dns)
+	dsn := os.Getenv("MYSQL_DSN")
+	if dsn == "" {
+		dsn = "root:crawl_secret@tcp(localhost:3306)/story?parseTime=true"
+	}
+	// Migrate cần multiStatements=true
+	migrateDSN := dsn
+	if strings.Contains(dsn, "?") {
+		migrateDSN = dsn + "&multiStatements=true"
+	} else {
+		migrateDSN = dsn + "?multiStatements=true"
+	}
+	migrate1(migrateDSN)
 
-	// Kết nối MySQL
-	database, err := dbgen.NewDB(dns + "?parseTime=true")
+	// Kết nối MySQL (đảm bảo có parseTime)
+	if !strings.Contains(dsn, "parseTime") {
+		if strings.Contains(dsn, "?") {
+			dsn += "&parseTime=true"
+		} else {
+			dsn += "?parseTime=true"
+		}
+	}
+	database, err := dbgen.NewDB(dsn)
 	if err != nil {
 		log.Fatal("cannot connect db:", err)
 	}
 	q := dbgen.New(database)
 
-	// Kết nối Redis
-	rdb := redis.NewClient("localhost:6379")
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+	rdb := redis.NewClient(redisAddr)
 
 	processor := service.NewProcessor(q, rdb)
 

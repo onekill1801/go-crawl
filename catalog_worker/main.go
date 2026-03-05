@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -14,7 +15,11 @@ import (
 var ctx = context.Background()
 
 func main() {
-	q := queue.NewRedisQueue("localhost:6379")
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+	q := queue.NewRedisQueue(redisAddr)
 
 	var wg sync.WaitGroup
 	streams := []struct {
