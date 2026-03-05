@@ -8,7 +8,7 @@ echo  Translate-Worker (Windows - GPU RTX 3060 Ti)
 echo ========================================
 echo.
 
-if not exist ".venv\Scripts\python.exe" (
+if not exist "venv\Scripts\python.exe" (
     echo LOI: Chua co .venv. Chay truoc: scripts\install-windows-gpu.bat
     pause
     exit /b 1
@@ -22,6 +22,6 @@ echo Service: http://localhost:8082
 echo Thoat: Ctrl+C
 echo.
 
-.venv\Scripts\python.exe -m translate_worker
+venv\Scripts\python.exe -m translate_worker
 
 pause

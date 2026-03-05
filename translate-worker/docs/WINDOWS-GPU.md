@@ -18,15 +18,15 @@ scripts\install-windows-gpu.bat
 
 Script sẽ:
 
-1. Tạo virtual environment `.venv` (nếu chưa có)
-2. Cài **PyTorch với CUDA 12.1** (tối ưu cho RTX 3060 Ti)
-3. Cài các package còn lại (transformers, flask, …)
+1. Tạo virtual environment `venv` (nếu chưa có)
+2. Cài **PyTorch 2.6+ với CUDA 12.4** (cu124 — yêu cầu bởi Transformers CVE-2025-32434)
+3. Cài các package còn lại (transformers, flask, sacremoses, …)
 
-Nếu lỗi với CUDA 12.1, sửa trong script hoặc chạy tay:
+Nếu lỗi với cu124, script sẽ thử cu121 (PyTorch 2.5). Khi đó có thể gặp lỗi `torch.load` — cần cài torch 2.6+ từ PyPI (sẽ dùng CPU) hoặc dùng cu124 khi có bản wheel.
 
 ```cmd
-.venv\Scripts\activate
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+venv\Scripts\activate
+pip install "torch>=2.6" torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
 pip install -r requirements.txt
 ```
 
@@ -47,7 +47,7 @@ scripts\run-translate-worker.bat
 **Cách 3 — Tự gõ lệnh:**
 
 ```cmd
-.venv\Scripts\activate
+venv\Scripts\activate
 set PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python -m translate_worker
 ```
@@ -57,7 +57,7 @@ Service chạy tại **http://localhost:8082**. Log sẽ ghi `Model loaded (devi
 ## Kiểm tra GPU
 
 ```cmd
-.venv\Scripts\python.exe -c "import torch; print('CUDA:', torch.cuda.is_available()); print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A')"
+venv\Scripts\python.exe -c "import torch; print('CUDA:', torch.cuda.is_available()); print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A')"
 ```
 
 Kết quả mong đợi: `CUDA: True`, `GPU: NVIDIA GeForce RTX 3060 Ti` (hoặc tên tương tự).

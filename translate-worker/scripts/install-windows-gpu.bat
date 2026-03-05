@@ -12,31 +12,32 @@ echo.
 :: Yeu cau: Python 3.10+ da cai, NVIDIA Driver + CUDA (neu chua co)
 :: Tai CUDA Toolkit: https://developer.nvidia.com/cuda-downloads
 
-if not exist ".venv" (
+if not exist "venv" (
     echo [1/3] Tao virtual environment...
-    python -m venv .venv
+    py -m venv venv
     if errorlevel 1 (
         echo LOI: Khong tao duoc venv. Kiem tra da cai Python chua.
         pause
         exit /b 1
     )
 ) else (
-    echo [1/3] Thu muc .venv da ton tai.
+    echo [1/3] Thu muc venv da ton tai.
 )
 
-call .venv\Scripts\activate.bat
+call venv\Scripts\activate.bat
 
 echo.
-echo [2/3] Cai PyTorch voi CUDA 12.1 (cho RTX 3060 Ti)...
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+echo [2/3] Cai PyTorch 2.6+ voi CUDA (yeu cau boi Transformers CVE-2025-32434)...
+echo       Thu cu124 truoc (co torch 2.6), neu loi thi thu cu121 (torch 2.5)...
+pip install "torch>=2.6" torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
 if errorlevel 1 (
-    echo Canh bao: Cai PyTorch CUDA that bai. Thu lai voi cu118:
-    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+    echo Thu lai voi cu121 (torch 2.5 - can transformers moi hon hoac chay CPU)...
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 )
 
 echo.
 echo [3/3] Cai cac package con lai (khong ghi de torch CUDA)...
-pip install flask transformers sentencepiece accelerate python-dotenv
+pip install flask transformers sentencepiece accelerate python-dotenv sacremoses
 if errorlevel 1 (
     echo LOI: pip install that bai.
     pause
@@ -45,7 +46,7 @@ if errorlevel 1 (
 
 echo.
 echo Kiem tra GPU...
-python -c "import torch; print('CUDA available:', torch.cuda.is_available()); print('Device:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')"
+py -c "import torch; print('CUDA available:', torch.cuda.is_available()); print('Device:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')"
 echo.
 echo ========================================
 echo  Cai dat xong. Chay: scripts\run-translate-worker.bat
