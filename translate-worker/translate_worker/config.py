@@ -14,22 +14,26 @@ except ImportError:
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8082"))
 
-# Model chạy local: tự tải lần đầu (from_pretrained). Mặc định VinAI (chất lượng tốt).
-# Nếu VinAI lỗi tokenizer sẽ tự fallback sang OPUS-MT.
-DEFAULT_MODEL = os.getenv(
-    "TRANSLATE_MODEL",
-    "vinai/vinai-translate-en2vi-v2",
-)
-SOURCE_LANG = os.getenv("SOURCE_LANG", "en")
-TARGET_LANG = os.getenv("TARGET_LANG", "vi")
-
-# Tùy chọn: gọi HF Inference API thay vì chạy local (đặt USE_HF_INFERENCE_API=1 + HF_TOKEN).
-USE_HF_INFERENCE_API = os.getenv("USE_HF_INFERENCE_API", "").lower() in ("1", "true", "yes")
-HF_TOKEN = os.getenv("HF_TOKEN", "")
-HF_TRANSLATION_MODEL = os.getenv("HF_TRANSLATION_MODEL", "vinai/vinai-translate-en2vi-v2")
-
-# Beam search local: 8 = chất lượng cao, chậm hơn
-NUM_BEAMS = int(os.getenv("NUM_BEAMS", "8"))
-LENGTH_PENALTY = float(os.getenv("LENGTH_PENALTY", "1.2"))
-# 0 = tắt (khuyên dùng). 3–4 có thể giảm lặp nhưng đôi khi làm tệ bản dịch.
-NO_REPEAT_NGRAM_SIZE = int(os.getenv("NO_REPEAT_NGRAM_SIZE", "0"))
+# --- NLLB-200-distilled-600M + CTranslate2 (mặc định) ---
+# Model CTranslate2: repo Hugging Face hoặc đường dẫn thư mục local. Lần đầu sẽ tự tải.
+CT2_MODEL = os.getenv("CT2_MODEL", "JustFrederik/nllb-200-distilled-600M-ct2")
+# Tokenizer NLLB (dùng chung với model gốc Facebook)
+NLLB_TOKENIZER = os.getenv("NLLB_TOKENIZER", "facebook/nllb-200-distilled-600M")
+# Mã ngôn ngữ NLLB: eng_Latn (Anh), vie_Latn (Việt), fra_Latn (Pháp), ...
+NLLB_SOURCE_LANG = os.getenv("NLLB_SOURCE_LANG", "eng_Latn")
+NLLB_TARGET_LANG = os.getenv("NLLB_TARGET_LANG", "vie_Latn")
+# Thiết bị: cpu, cuda, auto
+CT2_DEVICE = os.getenv("CT2_DEVICE", "auto")
+# Kiểu tính toán: default, float16, int8, int8_float16, ...
+CT2_COMPUTE_TYPE = os.getenv("CT2_COMPUTE_TYPE", "default")
+# Tham số dịch (ưu trong .env)
+CT2_BEAM_SIZE = int(os.getenv("CT2_BEAM_SIZE", "4"))
+CT2_LENGTH_PENALTY = float(os.getenv("CT2_LENGTH_PENALTY", "1.0"))
+CT2_PATIENCE = float(os.getenv("CT2_PATIENCE", "1.0"))
+CT2_MAX_DECODING_LENGTH = int(os.getenv("CT2_MAX_DECODING_LENGTH", "256"))
+CT2_MAX_INPUT_LENGTH = int(os.getenv("CT2_MAX_INPUT_LENGTH", "1024"))
+CT2_REPETITION_PENALTY = float(os.getenv("CT2_REPETITION_PENALTY", "1.0"))
+CT2_NO_REPEAT_NGRAM_SIZE = int(os.getenv("CT2_NO_REPEAT_NGRAM_SIZE", "0"))
+# Số luồng CPU (0 = mặc định)
+CT2_INTRA_THREADS = int(os.getenv("CT2_INTRA_THREADS", "0"))
+CT2_INTER_THREADS = int(os.getenv("CT2_INTER_THREADS", "1"))

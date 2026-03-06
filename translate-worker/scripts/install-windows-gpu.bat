@@ -27,17 +27,13 @@ if not exist "venv" (
 call venv\Scripts\activate.bat
 
 echo.
-echo [2/3] Cai PyTorch 2.6+ voi CUDA (yeu cau boi Transformers CVE-2025-32434)...
-echo       Thu cu124 truoc (co torch 2.6), neu loi thi thu cu121 (torch 2.5)...
-pip install "torch>=2.6" torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
-if errorlevel 1 (
-    echo Thu lai voi cu121 (torch 2.5 - can transformers moi hon hoac chay CPU)...
-    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-)
+echo [2/3] Cai PyTorch (cho CT2 device auto: kiem tra CUDA)...
+pip install torch --index-url https://download.pytorch.org/whl/cu124
+if errorlevel 1 ( pip install torch )
 
 echo.
-echo [3/3] Cai cac package con lai (khong ghi de torch CUDA)...
-pip install flask transformers sentencepiece accelerate python-dotenv sacremoses tiktoken
+echo [3/3] Cai cac package: ctranslate2, transformers, flask, python-dotenv...
+pip install -r requirements.txt
 if errorlevel 1 (
     echo LOI: pip install that bai.
     pause

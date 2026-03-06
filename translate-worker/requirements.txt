@@ -1,13 +1,10 @@
 # HTTP server
 flask>=3.0.0
 
-# AI Translation (Hugging Face)
+# NLLB + CTranslate2
+ctranslate2>=4.0.0
 transformers>=4.36.0
-# PyTorch 2.6+ required by Transformers (CVE-2025-32434). Windows GPU: use cu124 index.
-torch>=2.6.0
-sentencepiece>=0.1.99
-accelerate>=0.25.0
-tiktoken>=0.5.0
+torch>=2.0.0
 
 # Env
 python-dotenv>=1.0.0

@@ -8,7 +8,7 @@ from typing import Any
 from flask import Flask, jsonify, request
 
 from .config import HOST, PORT
-from .translator import preload_model, translate
+from .translator import get_model_info, preload_model, translate
 
 logging.basicConfig(
     level=logging.INFO,
@@ -23,6 +23,12 @@ app = Flask(__name__)
 @app.route("/health", methods=["GET"])
 def health() -> tuple[dict[str, str], int]:
     return {"status": "ok"}, 200
+
+
+@app.route("/info", methods=["GET"])
+def info() -> tuple[dict[str, Any], int]:
+    """Trả về thông tin model đang dùng và thư mục cache trên máy."""
+    return get_model_info(), 200
 
 
 @app.route("/translate", methods=["POST"])

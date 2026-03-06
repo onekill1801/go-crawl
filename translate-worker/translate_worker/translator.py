@@ -1,162 +1,117 @@
-"""Dịch văn bản bằng model AI (Hugging Face Transformers) — chạy local trên máy."""
+"""Dịch văn bản bằng NLLB-200-distilled-600M + CTranslate2 — chạy local."""
 
 from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Optional
+from typing import Optional
 
 from .config import (
-    DEFAULT_MODEL,
-    HF_TOKEN,
-    HF_TRANSLATION_MODEL,
-    LENGTH_PENALTY,
-    NO_REPEAT_NGRAM_SIZE,
-    NUM_BEAMS,
-    USE_HF_INFERENCE_API,
+    CT2_BEAM_SIZE,
+    CT2_COMPUTE_TYPE,
+    CT2_DEVICE,
+    CT2_INTER_THREADS,
+    CT2_INTRA_THREADS,
+    CT2_LENGTH_PENALTY,
+    CT2_MAX_DECODING_LENGTH,
+    CT2_MAX_INPUT_LENGTH,
+    CT2_MODEL,
+    CT2_NO_REPEAT_NGRAM_SIZE,
+    CT2_PATIENCE,
+    CT2_REPETITION_PENALTY,
+    NLLB_SOURCE_LANG,
+    NLLB_TARGET_LANG,
+    NLLB_TOKENIZER,
 )
 
 logger = logging.getLogger(__name__)
 
-_model = None
+_translator = None
 _tokenizer = None
-# Model mBART (VinAI) cần forced_bos_token_id = token tiếng Việt
-_forced_bos_token_id: Optional[int] = None
-# Tên model đã load (sau khi có fallback) — dùng cho get_model_info()
-_loaded_model_name: Optional[str] = None
+_loaded_model_path: Optional[str] = None
 
-# Cache kết quả cho text ngắn (tránh dịch lặp lại cùng câu)
+# Cache kết quả cho text ngắn
 _cache: dict[str, str] = {}
-_CACHE_MAX = 500  # số câu tối đa lưu cache
+_CACHE_MAX = 500
 
 
-def _get_forced_bos_token_id(tokenizer: Any) -> Optional[int]:
-    """Lấy token id ngôn ngữ đích (vi_VN) cho mBART — bắt buộc để dịch đúng."""
-    for token in ("vi_VN", "__vi_VN__", "vi"):
-        tid = tokenizer.convert_tokens_to_ids(token)
-        if tid is not None and tid != tokenizer.unk_token_id and tid != 0:
-            return tid
-    if getattr(tokenizer, "lang_code_to_id", None):
-        return tokenizer.lang_code_to_id.get("vi_VN") or tokenizer.lang_code_to_id.get("vi")
-    # mBART-50: Vietnamese thường là 250021
-    return 250021
+def _resolve_ct2_model_path(model_spec: str) -> str:
+    """Trả về đường dẫn thư mục model: nếu là repo HF thì tải về cache."""
+    if os.path.isdir(model_spec):
+        return os.path.abspath(model_spec)
+    if "/" in model_spec and "\\" not in model_spec:
+        try:
+            from huggingface_hub import snapshot_download
+            path = snapshot_download(repo_id=model_spec, local_files_only=False)
+            return path
+        except Exception as e:
+            logger.warning("snapshot_download failed for %s: %s", model_spec, e)
+    return model_spec
 
 
-# Model fallback khi VinAI lỗi tokenizer (transformers đọc nhầm SentencePiece bằng tiktoken).
-_FALLBACK_MODEL = "Helsinki-NLP/opus-mt-en-vi"
+def _get_translator_and_tokenizer():
+    global _translator, _tokenizer, _loaded_model_path
+    if _translator is None:
+        import ctranslate2
+        from transformers import AutoTokenizer
 
-
-def _get_model_and_tokenizer():
-    global _model, _tokenizer, _forced_bos_token_id, _loaded_model_name
-    if _model is None:
-        from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-        import torch
-
-        model_to_load = DEFAULT_MODEL
-        # VinAI: bắt buộc use_fast=False để dùng slow tokenizer (SentencePiece), tránh lỗi convert.
-        is_vinai = "vinai" in model_to_load.lower() and "en2vi" in model_to_load.lower()
-        for attempt in range(2):
+        model_path = _resolve_ct2_model_path(CT2_MODEL)
+        _loaded_model_path = model_path
+        if CT2_DEVICE == "auto":
             try:
-                if attempt > 0:
-                    model_to_load = _FALLBACK_MODEL
-                    logger.warning("Fallback to local model: %s", model_to_load)
-                logger.info("Loading translation model (first run may download): %s", model_to_load)
-                if is_vinai or "vinai" in model_to_load.lower():
-                    _prev = os.environ.get("TRANSFORMERS_USE_FAST_TOKENIZER")
-                    os.environ["TRANSFORMERS_USE_FAST_TOKENIZER"] = "0"
-                    try:
-                        _tokenizer = AutoTokenizer.from_pretrained(model_to_load, use_fast=False)
-                    finally:
-                        if _prev is None:
-                            os.environ.pop("TRANSFORMERS_USE_FAST_TOKENIZER", None)
-                        else:
-                            os.environ["TRANSFORMERS_USE_FAST_TOKENIZER"] = _prev
-                else:
-                    _tokenizer = AutoTokenizer.from_pretrained(model_to_load)
-                _model = AutoModelForSeq2SeqLM.from_pretrained(model_to_load)
-                _loaded_model_name = model_to_load
-                break
-            except Exception as e:
-                logger.warning("Load failed for %s: %s", model_to_load, e)
-                _model, _tokenizer = None, None
-                if attempt == 0 and (is_vinai or "vinai" in (model_to_load or "").lower()):
-                    is_vinai = False
-                    continue
-                raise
-        _model.eval()
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        _model = _model.to(device)
-        if getattr(_model.config, "model_type", None) == "mbart":
-            _forced_bos_token_id = _get_forced_bos_token_id(_tokenizer)
-            logger.info("mBART: using forced_bos_token_id=%s for Vietnamese.", _forced_bos_token_id)
+                import torch
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+            except Exception:
+                device = "cpu"
         else:
-            _forced_bos_token_id = None
-        logger.info("Model loaded (device=%s).", device)
-    return _model, _tokenizer
+            device = CT2_DEVICE
+        compute_type = (CT2_COMPUTE_TYPE or "default").strip() or "default"
+        logger.info("Loading NLLB + CTranslate2 (first run may download): %s", CT2_MODEL)
+        _translator = ctranslate2.Translator(
+            model_path,
+            device=device,
+            compute_type=compute_type,
+            inter_threads=CT2_INTER_THREADS,
+            intra_threads=CT2_INTRA_THREADS or 0,
+        )
+        _tokenizer = AutoTokenizer.from_pretrained(
+            NLLB_TOKENIZER,
+            src_lang=NLLB_SOURCE_LANG,
+            clean_up_tokenization_spaces=True,
+        )
+        logger.info("Model loaded (device=%s). %s -> %s", device, NLLB_SOURCE_LANG, NLLB_TARGET_LANG)
+    return _translator, _tokenizer
 
 
 def get_model_info() -> dict[str, str]:
-    """Trả về thông tin model đang dùng và thư mục cache trên máy."""
+    """Trả về thông tin model đang dùng và thư mục lưu."""
     try:
-        from huggingface_hub import constants
-        cache_dir = os.path.expanduser(
-            os.environ.get("HF_HUB_CACHE", getattr(constants, "HF_HUB_CACHE", ""))
-        )
-        if not cache_dir and hasattr(constants, "HF_HUB_CACHE"):
-            cache_dir = os.path.expanduser(constants.HF_HUB_CACHE)
+        from huggingface_hub.constants import HF_HUB_CACHE
+        cache_dir = os.path.expanduser(os.path.expandvars(HF_HUB_CACHE))
     except Exception:
         cache_dir = os.path.expanduser(
             os.environ.get("HF_HUB_CACHE", os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "hub"))
         )
-    name = _loaded_model_name or DEFAULT_MODEL
+    model_name = _loaded_model_path or CT2_MODEL
     return {
-        "model": name,
+        "model": CT2_MODEL,
+        "model_path": model_name,
+        "tokenizer": NLLB_TOKENIZER,
+        "source_lang": NLLB_SOURCE_LANG,
+        "target_lang": NLLB_TARGET_LANG,
         "cache_dir": cache_dir,
-        "model_cache_path": os.path.join(cache_dir, "models--" + name.replace("/", "--")),
     }
 
 
 def preload_model() -> None:
-    """Tải model local (tự download lần đầu), rồi sẵn sàng dịch."""
-    _get_model_and_tokenizer()
+    """Tải model local (tự download lần đầu), sẵn sàng dịch."""
+    _get_translator_and_tokenizer()
     info = get_model_info()
     logger.info(
-        "Model preloaded and ready. Model: %s | Cache: %s",
+        "Model preloaded and ready. Model: %s | Path: %s",
         info["model"],
-        info["cache_dir"],
+        info["model_path"],
     )
-    logger.info("Model preloaded and ready.")
-
-
-def _translate_via_hf_api(text: str) -> Optional[str]:
-    """Dịch qua Hugging Face Inference API (VinAI trên server) — chất lượng tốt nhất."""
-    if not HF_TOKEN or not USE_HF_INFERENCE_API:
-        return None
-    try:
-        import urllib.request
-        import json
-        url = f"https://api-inference.huggingface.co/models/{HF_TRANSLATION_MODEL}"
-        req = urllib.request.Request(
-            url,
-            data=json.dumps({"inputs": text}).encode("utf-8"),
-            headers={
-                "Authorization": f"Bearer {HF_TOKEN}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            out = json.loads(resp.read().decode("utf-8"))
-        if isinstance(out, str):
-            return out.strip() or None
-        if isinstance(out, list) and len(out) and isinstance(out[0], dict):
-            return (out[0].get("translation_text") or out[0].get("translated_text") or "").strip() or None
-        if isinstance(out, dict):
-            return (out.get("translation_text") or out.get("translated_text") or "").strip() or None
-        return None
-    except Exception as e:
-        logger.warning("HF Inference API failed: %s", e)
-        return None
 
 
 def translate(
@@ -165,58 +120,36 @@ def translate(
     max_length: Optional[int] = None,
     truncation: bool = True,
 ) -> str:
-    """Dịch một đoạn văn bản. Trả về chuỗi đã dịch."""
+    """Dịch một đoạn văn bản (en -> vi mặc định). Trả về chuỗi đã dịch."""
     if not text or not text.strip():
         return text
 
     text = text.strip()
-    # Cache cho text ngắn (giảm inference lặp)
     if len(text) < 200 and text in _cache:
         return _cache[text]
 
-    # Ưu tiên Hugging Face Inference API (VinAI) — chất lượng tốt nhất
-    if USE_HF_INFERENCE_API and HF_TOKEN:
-        hf_out = _translate_via_hf_api(text)
-        if hf_out is not None and hf_out.strip():
-            if len(text) < 200 and len(_cache) < _CACHE_MAX:
-                _cache[text] = hf_out
-            return hf_out
-        # API lỗi hoặc trả rỗng -> fallback local
-        logger.info("HF API unavailable or empty, using local model.")
+    translator, tokenizer = _get_translator_and_tokenizer()
+    max_dec = max_length or CT2_MAX_DECODING_LENGTH
 
-    import torch
+    input_ids = tokenizer.encode(text, truncation=truncation, max_length=CT2_MAX_INPUT_LENGTH)
+    source_tokens = tokenizer.convert_ids_to_tokens(input_ids)
+    target_prefix = [[NLLB_TARGET_LANG]]
 
-    model, tokenizer = _get_model_and_tokenizer()
-    device = next(model.parameters()).device
+    results = translator.translate_batch(
+        [source_tokens],
+        target_prefix=target_prefix,
+        beam_size=CT2_BEAM_SIZE,
+        length_penalty=CT2_LENGTH_PENALTY,
+        patience=CT2_PATIENCE,
+        max_decoding_length=max_dec,
+        max_input_length=CT2_MAX_INPUT_LENGTH,
+        repetition_penalty=CT2_REPETITION_PENALTY,
+        no_repeat_ngram_size=CT2_NO_REPEAT_NGRAM_SIZE,
+    )
 
-    # mBART (VinAI) hỗ trợ max 1024; Marian/OPUS thường 512
-    max_src = 1024 if getattr(model.config, "model_type", None) == "mbart" else 512
-    max_in = min(max_src, len(text) + 80)
-    max_out = max_length or min(max_src, max_in + 60)
-
-    inputs = tokenizer(
-        text,
-        return_tensors="pt",
-        truncation=truncation,
-        max_length=max_in,
-        padding=True,
-    ).to(device)
-
-    generate_kwargs: dict[str, Any] = {
-        "max_length": max_out,
-        "num_beams": NUM_BEAMS,
-        "length_penalty": LENGTH_PENALTY,
-        "early_stopping": True,
-    }
-    if NO_REPEAT_NGRAM_SIZE > 0:
-        generate_kwargs["no_repeat_ngram_size"] = NO_REPEAT_NGRAM_SIZE
-    if _forced_bos_token_id is not None:
-        generate_kwargs["forced_bos_token_id"] = _forced_bos_token_id
-
-    with torch.inference_mode():
-        out = model.generate(**inputs, **generate_kwargs)
-
-    decoded = tokenizer.decode(out[0], skip_special_tokens=True).strip()
+    # hypotheses[0] là list token; bỏ token đầu (mã ngôn ngữ đích)
+    out_tokens = results[0].hypotheses[0][1:]
+    decoded = tokenizer.decode(tokenizer.convert_tokens_to_ids(out_tokens), skip_special_tokens=True).strip()
 
     if len(text) < 200 and len(_cache) < _CACHE_MAX:
         _cache[text] = decoded
