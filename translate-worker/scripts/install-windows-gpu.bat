@@ -37,7 +37,7 @@ if errorlevel 1 (
 
 echo.
 echo [3/3] Cai cac package con lai (khong ghi de torch CUDA)...
-pip install flask transformers sentencepiece accelerate python-dotenv sacremoses
+pip install flask transformers sentencepiece accelerate python-dotenv sacremoses tiktoken
 if errorlevel 1 (
     echo LOI: pip install that bai.
     pause
